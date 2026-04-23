@@ -25,9 +25,11 @@ const updateProfile = async (req, res) => {
     if (!userDoc.exists) {
       return res.status(404).json({ message: 'User not found in system' });
     }
-    const role = userDoc.data().role;
+    const userData = userDoc.data();
+    const role = userData.role;
+    const email = userData.email;
 
-    const profileData = { uid, role, ...req.body, updatedAt: new Date().toISOString() };
+    const profileData = { uid, role, email, ...req.body, updatedAt: new Date().toISOString() };
     
     await db.collection('profiles').doc(uid).set(profileData, { merge: true });
 

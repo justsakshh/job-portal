@@ -136,10 +136,10 @@ const getApplications = async (req, res) => {
       
       // Fetch applicant's profile info
       const profileDoc = await db.collection('profiles').doc(applicantId).get();
-      if (profileDoc.exists) {
+      if (profileDoc.exists && profileDoc.data().email) {
         const profileData = profileDoc.data();
         appData.applicantName = profileData.name || 'Anonymous';
-        appData.applicantEmail = profileData.email || '';
+        appData.applicantEmail = profileData.email;
       } else {
         // Fallback to user data if profile not found
         const userDoc = await db.collection('users').doc(applicantId).get();
