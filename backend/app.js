@@ -15,14 +15,20 @@ const applicationRoutes = require('./routes/applicationRoutes');
 const analyticsRoutes = require('./routes/analyticsRoutes');
 
 // Routes
-app.use('/api/v1/auth', authRoutes);
-app.use('/api/v1/profile', profileRoutes);
-app.use('/api/v1/jobs', jobRoutes);
-app.use('/api/v1/applications', applicationRoutes);
-app.use('/api/v1/analytics', analyticsRoutes);
+const mountRoutes = (path) => {
+  app.use(`${path}/auth`, authRoutes);
+  app.use(`${path}/profile`, profileRoutes);
+  app.use(`${path}/jobs`, jobRoutes);
+  app.use(`${path}/applications`, applicationRoutes);
+  app.use(`${path}/analytics`, analyticsRoutes);
+};
+
+// Handle both Vercel-prefixed and standard routes
+mountRoutes('/api/v1');
+mountRoutes('/v1');
 
 // Health Check Route
-app.get('/api/v1/health', (req, res) => {
+app.get(['/api/v1/health', '/v1/health'], (req, res) => {
   res.status(200).json({ status: 'OK', message: 'Job Portal API is running' });
 });
 
