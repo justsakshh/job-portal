@@ -114,7 +114,17 @@ const ChatWindow = ({ messages, currentUserId }) => {
                     )}
                   </div>
                   <div className={`d-flex justify-content-end align-items-center gap-1 mt-1 ${isMe ? 'text-white-50' : 'text-muted'}`} style={{ fontSize: '0.75rem' }}>
-                    {msg.updatedAt && msg.updatedAt !== msg.createdAt && <span>(edited)</span>}
+                    {(() => {
+                      let showEdited = false;
+                      if (msg.updatedAt && msg.createdAt) {
+                        const updateTime = msg.updatedAt.toMillis ? msg.updatedAt.toMillis() : new Date(msg.updatedAt).getTime();
+                        const createTime = msg.createdAt.toMillis ? msg.createdAt.toMillis() : new Date(msg.createdAt).getTime();
+                        if (Math.abs(updateTime - createTime) > 2000) {
+                          showEdited = true;
+                        }
+                      }
+                      return showEdited && <span>(edited)</span>;
+                    })()}
                     <span>{formatTime(msg.createdAt)}</span>
                   </div>
                 </>

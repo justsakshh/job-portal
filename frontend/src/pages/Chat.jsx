@@ -11,7 +11,7 @@ import toast from 'react-hot-toast';
 
 const Chat = () => {
   const { id: receiverId } = useParams(); // URL param is now the receiver's UID
-  const { user } = useAuth();
+  const { user, role } = useAuth();
   const navigate = useNavigate();
   
   const [messages, setMessages] = useState([]);
@@ -114,7 +114,13 @@ const Chat = () => {
 
         {/* Input Footer */}
         <div className="card-footer bg-white border-top p-3">
-          <MessageInput onSendMessage={handleSendMessage} disabled={false} />
+          {role !== 'employer' && messages.length === 0 ? (
+            <div className="text-center text-muted small p-2">
+              Waiting for the employer to initiate the conversation.
+            </div>
+          ) : (
+            <MessageInput onSendMessage={handleSendMessage} disabled={false} />
+          )}
         </div>
         
       </div>

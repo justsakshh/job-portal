@@ -52,7 +52,18 @@ const Messages = () => {
           otherParticipantId
         });
       }
-      setConversations(convos);
+
+      // Deduplicate by otherParticipantId, keeping the most recent (which is first due to orderBy)
+      const uniqueConvos = [];
+      const seenParticipants = new Set();
+      for (const convo of convos) {
+        if (!seenParticipants.has(convo.otherParticipantId)) {
+          seenParticipants.add(convo.otherParticipantId);
+          uniqueConvos.push(convo);
+        }
+      }
+
+      setConversations(uniqueConvos);
       setLoading(false);
     });
 
