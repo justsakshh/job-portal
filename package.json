@@ -1,0 +1,13 @@
+{
+  "name": "job-portal-monorepo",
+  "private": true,
+  "workspaces": [
+    "frontend",
+    "backend"
+  ],
+  "scripts": {
+    "install:all": "npm install",
+    "build:frontend": "npm run build --workspace=frontend",
+    "build": "npm run build:frontend"
+  }
+}
