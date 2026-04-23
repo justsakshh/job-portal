@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '../services/firebase';
-import { generateConversationId, listenMessages, sendMessage } from '../services/firestore/messages';
+import { generateConversationId, listenMessages, sendMessage, deleteConversation } from '../services/firestore/messages';
 import ChatWindow from '../components/chat/ChatWindow';
 import MessageInput from '../components/chat/MessageInput';
 import { ArrowLeft } from 'lucide-react';
@@ -75,6 +75,22 @@ const Chat = () => {
     }
   };
 
+  const handleDeleteChat = async () => {
+    if (!user || !receiverId) return;
+    
+    if (window.confirm("Are you sure you want to delete this entire chat history? This action cannot be undone and will delete it for both users.")) {
+      try {
+        const conversationId = generateConversationId(user.uid, receiverId);
+        await deleteConversation(conversationId);
+        toast.success("Chat deleted successfully");
+        navigate('/messages');
+      } catch (error) {
+        toast.error("Failed to delete chat");
+        console.error(error);
+      }
+    }
+  };
+
   if (loadingProfile) {
     return (
       <div className="d-flex justify-content-center align-items-center py-5" style={{ minHeight: '60vh' }}>
@@ -90,19 +106,30 @@ const Chat = () => {
       <div className="card shadow-sm border-0 h-100 d-flex flex-column">
         
         {/* Header */}
-        <div className="card-header bg-white border-bottom p-3 d-flex align-items-center">
-          <button 
-            onClick={() => navigate('/messages')}
-            className="btn btn-link text-secondary p-0 me-3 d-flex align-items-center"
-          >
-            <ArrowLeft size={24} />
-          </button>
-          <div className="d-flex align-items-center gap-3">
-            <div className="bg-primary text-white rounded-circle d-flex justify-content-center align-items-center" style={{ width: '40px', height: '40px', fontSize: '1.2rem', fontWeight: 'bold' }}>
-              {otherUser ? otherUser.charAt(0).toUpperCase() : '?'}
+        <div className="card-header bg-white border-bottom p-3 d-flex justify-content-between align-items-center">
+          <div className="d-flex align-items-center">
+            <button 
+              onClick={() => navigate('/messages')}
+              className="btn btn-link text-secondary p-0 me-3 d-flex align-items-center"
+            >
+              <ArrowLeft size={24} />
+            </button>
+            <div className="d-flex align-items-center gap-3">
+              <div className="bg-primary text-white rounded-circle d-flex justify-content-center align-items-center" style={{ width: '40px', height: '40px', fontSize: '1.2rem', fontWeight: 'bold' }}>
+                {otherUser ? otherUser.charAt(0).toUpperCase() : '?'}
+              </div>
+              <h5 className="mb-0 fw-bold text-dark">{otherUser || 'Chat'}</h5>
             </div>
-            <h5 className="mb-0 fw-bold text-dark">{otherUser || 'Chat'}</h5>
           </div>
+          {messages.length > 0 && (
+            <button 
+              onClick={handleDeleteChat}
+              className="btn btn-outline-danger btn-sm"
+              title="Delete entire chat history"
+            >
+              Delete Chat
+            </button>
+          )}
         </div>
 
         {/* Messages Body */}
