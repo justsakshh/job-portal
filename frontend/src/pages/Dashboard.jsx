@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import api from '../services/api';
 import { useQuery } from '@tanstack/react-query';
-import { Briefcase, FileText, CheckCircle, XCircle, Clock, Building2, Users } from 'lucide-react';
+import { Briefcase, FileText, CheckCircle, XCircle, Clock, Building2, Users, User } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 const StatCard = ({ title, value, icon, bgColor, textColor }) => (
@@ -191,6 +191,19 @@ const Dashboard = () => {
     staleTime: 5 * 60 * 1000, // 5 minutes cache
   });
 
+  const { data: profile } = useQuery({
+    queryKey: ['profile-check', user?.uid],
+    queryFn: async () => {
+      const { data } = await api.get('/profile');
+      return data.profile;
+    },
+    enabled: !!user,
+  });
+
+  const isProfileIncomplete = role === 'employer' 
+    ? !profile?.companyName 
+    : !profile?.name;
+
   if (isLoading) {
     return (
       <div className="d-flex justify-content-center align-items-center" style={{ minHeight: '50vh' }}>
@@ -211,6 +224,23 @@ const Dashboard = () => {
 
   return (
     <div className="container py-4">
+      {isProfileIncomplete && (
+        <div className="alert alert-warning border-0 shadow-sm mb-4 d-flex align-items-center justify-content-between p-4 rounded-4" role="alert">
+          <div className="d-flex align-items-center">
+            <div className="bg-warning bg-opacity-20 text-warning p-3 rounded-circle me-3">
+              <User size={24} />
+            </div>
+            <div>
+              <h5 className="alert-heading fw-bold mb-1">Complete Your Profile!</h5>
+              <p className="mb-0 text-dark opacity-75">Please add your {role === 'employer' ? 'company' : 'personal'} details to get the most out of our platform.</p>
+            </div>
+          </div>
+          <Link to="/profile" className="btn btn-warning fw-bold px-4 rounded-pill shadow-sm">
+            Go to Profile
+          </Link>
+        </div>
+      )}
+
       <div className="d-flex justify-content-between align-items-end mb-4">
         <div>
           <h1 className="display-5 fw-bold mb-0">Dashboard</h1>
