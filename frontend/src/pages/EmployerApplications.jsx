@@ -103,6 +103,7 @@ const EmployerApplications = () => {
               <thead className="table-light">
                 <tr>
                   <th className="py-3 px-4 border-0">Job Title</th>
+                  <th className="py-3 px-4 border-0">Candidate</th>
                   <th className="py-3 px-4 border-0">Date Applied</th>
                   <th className="py-3 px-4 border-0 text-center">Resume</th>
                   <th className="py-3 px-4 border-0 text-center">Contact</th>
@@ -113,6 +114,12 @@ const EmployerApplications = () => {
                 {apps.map(app => (
                   <tr key={app.id}>
                     <td className="py-3 px-4 fw-medium text-dark">{app.jobTitle || app.jobId}</td>
+                    <td className="py-3 px-4">
+                      <div className="d-flex flex-column">
+                        <span className="fw-bold text-dark">{app.applicantName || 'Anonymous'}</span>
+                        <span className="text-muted small">{app.applicantEmail || 'N/A'}</span>
+                      </div>
+                    </td>
                     <td className="py-3 px-4 text-muted small">
                       <span className="d-flex align-items-center gap-2">
                         <Calendar size={14} />

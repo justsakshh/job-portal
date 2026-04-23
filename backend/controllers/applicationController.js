@@ -130,9 +130,27 @@ const getApplications = async (req, res) => {
     const snapshot = await appsQuery.get();
     const applications = [];
 
-    snapshot.forEach(doc => {
-      applications.push(doc.data());
-    });
+    for (const doc of snapshot.docs) {
+      const appData = doc.data();
+      const applicantId = appData.applicantId;
+      
+      // Fetch applicant's profile info
+      const profileDoc = await db.collection('profiles').doc(applicantId).get();
+      if (profileDoc.exists) {
+        const profileData = profileDoc.data();
+        appData.applicantName = profileData.name || 'Anonymous';
+        appData.applicantEmail = profileData.email || '';
+      } else {
+        // Fallback to user data if profile not found
+        const userDoc = await db.collection('users').doc(applicantId).get();
+        if (userDoc.exists) {
+          appData.applicantName = userDoc.data().email.split('@')[0];
+          appData.applicantEmail = userDoc.data().email;
+        }
+      }
+      
+      applications.push(appData);
+    }
 
     applications.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 
