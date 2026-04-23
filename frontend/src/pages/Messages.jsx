@@ -88,7 +88,7 @@ const Messages = () => {
             {conversations.map((convo) => (
               <button
                 key={convo.id}
-                onClick={() => navigate(`/messages/${convo.id}`)}
+                onClick={() => navigate(`/messages/${convo.otherParticipantId}`)}
                 className="list-group-item list-group-item-action p-4 border-bottom"
               >
                 <div className="d-flex w-100 justify-content-between align-items-center mb-1">
