@@ -9,5 +9,13 @@
     "install:all": "npm install",
     "build:frontend": "npm run build --workspace=frontend",
     "build": "npm run build:frontend"
+  },
+  "dependencies": {
+    "cloudinary": "^2.9.0",
+    "cors": "^2.8.6",
+    "dotenv": "^17.4.2",
+    "express": "^5.2.1",
+    "firebase-admin": "^13.8.0",
+    "multer": "^2.1.1"
   }
 }
