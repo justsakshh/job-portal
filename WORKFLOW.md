@@ -1,81 +1,98 @@
-# Project Workflow Guide
+# Project File Workflow & Architecture
 
-This document illustrates the end-to-end workflow of the Job Portal Application, highlighting the interaction between Job Seekers and Employers.
+This document outlines the file structure and the logical flow of data through the AI-Powered Job Portal.
 
-## 📊 High-Level Flowchart
+## 1. Directory Structure Overview
 
-```mermaid
-graph TD
-    %% Entry Point
-    Start((Start)) --> Auth{Login / Register}
-    
-    %% Role Branching
-    Auth -->|Select Role: Job Seeker| JS_Dash[Job Seeker Dashboard]
-    Auth -->|Select Role: Employer| EMP_Dash[Employer Dashboard]
-
-    %% Job Seeker Workflow
-    subgraph "Job Seeker Path"
-    JS_Dash --> Search[Search Jobs / Apply Filters]
-    Search --> Details[View Job Details]
-    Details --> Apply[Submit Application]
-    Apply --> MyApps[My Applications List]
-    MyApps --> Status[Track Status: Applied/Shortlisted/Hired]
-    end
-
-    %% Employer Workflow
-    subgraph "Employer Path"
-    EMP_Dash --> PostJob[Post New Job Listing]
-    PostJob --> Review[Review Incoming Applicants]
-    Review --> Decisions[Update Status: Shortlist/Reject/Hire]
-    Decisions --> EmpAnalytics[View Pipeline Analytics]
-    end
-
-    %% Interaction Points
-    Apply -.->|Triggers| Review
-    Decisions -.->|Triggers Notification| MyApps
-    
-    %% Mutual Interaction (Communication)
-    Review <-->|Direct Messaging| Chat[Real-time Chat]
-    Apply <-->|Direct Messaging| Chat
-    
-    %% System Notifications
-    Chat -.->|Alerts| Notif[Notifications System]
-    Decisions -.->|Alerts| Notif
-
-    style Start fill:#4f46e5,color:#fff
-    style JS_Dash fill:#e0f2fe,stroke:#0369a1
-    style EMP_Dash fill:#fef3c7,stroke:#b45309
-    style Chat fill:#dcfce7,stroke:#15803d
-    style Notif fill:#fef2f2,stroke:#b91c1c
+```text
+JOB-PORTAL/
+├── backend/                # Express.js API (Vercel Functions)
+│   ├── api/                # Vercel entry point (index.js)
+│   ├── config/             # Firebase Admin & Cloudinary setup
+│   ├── controllers/        # Business logic for each module
+│   ├── middleware/         # Auth & Role verification
+│   └── routes/             # API endpoint definitions
+├── frontend/               # React SPA (Vite)
+│   ├── src/
+│   │   ├── components/     # Reusable UI (Chat, Navbar, etc.)
+│   │   ├── context/        # Auth & Global State
+│   │   ├── pages/          # Full-page views (Dashboard, Chat, etc.)
+│   │   └── services/       # Firebase Client & API Axios setup
+│   └── public/             # Static assets
+└── PROJECT_DOCUMENTATION.md # Project overview
 ```
 
 ---
 
-## 🛠️ Workflow Breakdown
+## 2. Request Lifecycle (The "Flow")
 
-### 1. Authentication & Onboarding
-*   **Role Selection:** Users must choose their identity (Job Seeker or Employer) during registration. This decision permanently shapes their application experience.
-*   **Access Control:** The system uses secure JWT/Firebase tokens to ensure users only access routes permitted for their role.
+### A. Authentication Flow
+1.  **UI:** User enters credentials in `Login.jsx` or `Register.jsx`.
+2.  **Service:** Calls `firebase/auth` directly from the frontend for speed.
+3.  **Context:** `AuthContext.jsx` catches the state change, then calls the backend `/api/v1/auth/me` to fetch role-specific data from Firestore.
+4.  **Result:** User is redirected via `HomeRedirect` in `App.jsx` to the appropriate dashboard.
 
-### 2. Job Seeker Journey
-*   **Discovery:** A responsive search engine with keyword and location filters helps candidates find relevant opportunities.
-*   **Engagement:** Candidates can view detailed job descriptions and requirements before applying.
-*   **Application Tracking:** Every application is logged, allowing candidates to monitor progress as employers review their profiles.
+### B. Job Application Flow
+1.  **UI:** Job seeker clicks "Apply" in `JobList.jsx`.
+2.  **Service:** `api.js` sends a POST request to `/api/v1/applications/apply`.
+3.  **Backend:** `applicationRoutes.js` -> `applicationController.js` logic:
+    *   Verifies the job exists.
+    *   Checks for duplicate applications.
+    *   Saves the application to the `applications` collection.
+    *   Creates a notification for the employer in the `notifications` collection.
+4.  **UI:** Real-time feedback via `react-hot-toast`.
 
-### 3. Employer Journey
-*   **Talent Acquisition:** Employers can post rich job descriptions including company names, salary ranges, and specific requirements.
-*   **Candidate Pipeline:** Employers manage all applicants from a centralized dashboard, allowing them to shortlist or hire candidates with a single click.
-*   **Intelligence:** The dashboard provides real-time analytics on which jobs are attracting the most interest.
-
-### 4. Communication & Real-time Updates
-*   **Direct Messaging:** A dedicated chat system enables immediate coordination between both parties.
-*   **Automated Notifications:** The system sends instant alerts for:
-    *   New messages received.
-    *   Application status updates (Shortlisted, Hired, etc.).
+### C. Messaging (Real-time) Flow
+1.  **UI:** User opens `Chat.jsx`.
+2.  **Service:** `firestore/messages.js` initializes `listenMessages(conversationId)`.
+3.  **Real-time:** `onSnapshot` opens a persistent websocket to Firestore.
+4.  **Update:** When a new message is added to the `messages` collection (via `sendMessage` in the same service), Firestore pushes the update to all active listeners.
+5.  **Display:** `ChatWindow.jsx` re-renders with the new message, automatically scrolling to the bottom.
 
 ---
 
-## 🚀 Future Roadmap
-*   **AI Matching:** Automatic recommendation of jobs based on seeker profiles.
-*   **Resume Parsing:** Automated data extraction from uploaded PDF resumes.
-*   **Interview Scheduling:** Calendar integration for booking interview slots directly.
+## 3. Key Service Files
+
+*   **`frontend/src/services/api.js`**: Centralized Axios instance with interceptors to attach the Firebase Auth token to every request header.
+*   **`frontend/src/services/firestore/messages.js`**: Encapsulates all Firestore-specific logic (Deduplication, Batch Deletes, Real-time listeners).
+*   **`backend/config/firebaseAdmin.js`**: Initializes the Firebase Admin SDK for secure server-side database access.
+*   **`backend/middleware/authMiddleware.js`**: Decodes the Firebase ID Token to verify user identity before allowing access to protected routes.
+
+---
+
+## 4. Build & Deployment Workflow
+
+1.  **Local Dev:** 
+    *   Backend: `npm run dev` (running on port 5000).
+    *   Frontend: `npm run dev` (Vite on port 5173).
+2.  **Build:** `npm run build` in the root directory.
+    *   Compiles React code into `frontend/dist`.
+    *   Copies the `dist` folder to the root for Vercel deployment.
+3.  **Production:** Vercel detects `vercel.json`:
+    *   Routes `/api/*` to the backend Node.js function.
+    *   Routes all other paths to `index.html` (for Client-Side Routing).
+
+---
+
+## 5. Data Flow Diagram
+
+```mermaid
+sequenceDiagram
+    participant User
+    participant Frontend (React)
+    participant Backend (Node.js)
+    participant Firestore
+    participant AI (Gemini)
+
+    User->>Frontend: Interaction (e.g., Post Job)
+    Frontend->>Backend: API Request (with Auth Token)
+    Backend->>Backend: Verify Token & Role
+    Backend->>Firestore: Write Data
+    Firestore-->>Backend: Success
+    Backend-->>Frontend: Response 201
+    Frontend->>User: UI Update (Toast)
+
+    Note over Frontend, Firestore: Real-time Listener (onSnapshot)
+    Firestore-->>Frontend: New Message Data
+    Frontend->>User: Show New Message
+```
